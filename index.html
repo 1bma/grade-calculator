@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة المعدل الجامعي</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        input:focus { outline: none; border-color: #4F46E5 !important; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        button { transition: all 0.2s; }
+        a:hover { transform: scale(1.05); }
+        a { transition: all 0.2s; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+        function GradeCalculator() {
+          const [subjects, setSubjects] = useState([
+            { id: 1, name: '', exam: '', td: '', tp: '', coef: '', examWeight: 60, tdWeight: 40, tpWeight: 0 }
+          ]);
+          const [result, setResult] = useState(null);
+          const addSubject = () => {
+            setSubjects([...subjects, {
+              id: Date.now(), name: '', exam: '', td: '', tp: '', coef: '',
+              examWeight: 60, tdWeight: 40, tpWeight: 0
+            }]);
+          };
+          const removeSubject = (id) => {
+            if (subjects.length > 1) setSubjects(subjects.filter(s => s.id !== id));
+          };
+          const updateSubject = (id, field, value) => {
+            setSubjects(subjects.map(s => s.id === id ? { ...s, [field]: value } : s));
+          };
+          const updateWeights = (id, exam, td, tp) => {
+            setSubjects(subjects.map(s => s.id === id ? { ...s, examWeight: exam, tdWeight: td, tpWeight: tp } : s));
+          };
+          const calculateAverage = () => {
+            let totalPoints = 0, totalCoef = 0;
+            const details = [];
+            subjects.forEach(subject => {
+              if (subject.coef && subject.name) {
+                const exam = parseFloat(subject.exam) || 0;
+                const td = parseFloat(subject.td) || 0;
+                const tp = parseFloat(subject.tp) || 0;
+                const coef = parseFloat(subject.coef) || 0;
+                const finalGrade = (exam * subject.examWeight/100) + (td * subject.tdWeight/100) + (tp * subject.tpWeight/100);
+                const weightedPoints = finalGrade * coef;
+                totalPoints += weightedPoints;
+                totalCoef += coef;
+                details.push({ name: subject.name, finalGrade: finalGrade.toFixed(2), coef, weightedPoints: weightedPoints.toFixed(2) });
+              }
+            });
+            const average = totalCoef > 0 ? (totalPoints / totalCoef).toFixed(2) : 0;
+            setResult({ average, totalCoef, details });
+          };
+          return (
+            <div style={{minHeight:'100vh',background:'linear-gradient(to bottom right, #EFF6FF, #E0E7FF)',padding:'1rem'}}>
+              <div style={{maxWidth:'1200px',margin:'0 auto'}}>
+                <div style={{background:'white',borderRadius:'1rem',boxShadow:'0 20px 25px -5px rgba(0,0,0,0.1)',padding:'1.5rem'}}>
+                  <h1 style={{fontSize:'clamp(1.5rem,5vw,2.5rem)',fontWeight:'bold',textAlign:'center',color:'#4F46E5',marginBottom:'2rem'}}>
+                    📚 حاسبة المعدل الجامعي
+                  </h1>
+                  <div style={{marginBottom:'1.5rem'}}>
+                    {subjects.map((subject, index) => (
+                      <div key={subject.id} style={{background:'#F9FAFB',padding:'1rem',borderRadius:'0.5rem',border:'2px solid #E5E7EB',marginBottom:'1rem'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+                          <h3 style={{fontWeight:'bold',color:'#4338CA'}}>المادة {index + 1}</h3>
+                          {subjects.length > 1 && (
+                            <button onClick={() => removeSubject(subject.id)} style={{color:'#EF4444',cursor:'pointer',background:'none',border:'none',padding:'0.25rem',fontSize:'1.5rem'}}>✕</button>
+                          )}
+                        </div>
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))',gap:'0.75rem',marginBottom:'1rem'}}>
+                          <input type="text" placeholder="اسم المادة" value={subject.name} onChange={(e) => updateSubject(subject.id, 'name', e.target.value)} style={{padding:'0.75rem',border:'2px solid #D1D5DB',borderRadius:'0.5rem'}}/>
+                          <input type="number" placeholder="المعامل" value={subject.coef} onChange={(e) => updateSubject(subject.id, 'coef', e.target.value)} style={{padding:'0.75rem',border:'2px solid #D1D5DB',borderRadius:'0.5rem'}} step="0.5"/>
+                        </div>
+                        <div style={{background:'white',padding:'0.75rem',borderRadius:'0.5rem',marginBottom:'1rem'}}>
+                          <p style={{fontSize:'0.875rem',fontWeight:'600',color:'#374151',marginBottom:'0.5rem'}}>نظام التقييم:</p>
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.5rem'}}>
+                            <div>
+                              <label style={{fontSize:'0.75rem',color:'#6B7280',display:'block',marginBottom:'0.25rem'}}>امتحان %</label>
+                              <input type="number" value={subject.examWeight} onChange={(e) => {const exam = parseInt(e.target.value) || 0; updateWeights(subject.id, exam, 100 - exam, 0);}} style={{width:'100%',padding:'0.5rem',border:'1px solid #D1D5DB',borderRadius:'0.25rem'}} min="0" max="100"/>
+                            </div>
+                            <div>
+                              <label style={{fontSize:'0.75rem',color:'#6B7280',display:'block',marginBottom:'0.25rem'}}>TD %</label>
+                              <input type="number" value={subject.tdWeight} onChange={(e) => {const td = parseInt(e.target.value) || 0; updateWeights(subject.id, subject.examWeight, td, 100 - subject.examWeight - td);}} style={{width:'100%',padding:'0.5rem',border:'1px solid #D1D5DB',borderRadius:'0.25rem'}} min="0" max="100"/>
+                            </div>
+                            <div>
+                              <label style={{fontSize:'0.75rem',color:'#6B7280',display:'block',marginBottom:'0.25rem'}}>TP %</label>
+                              <input type="number" value={subject.tpWeight} onChange={(e) => {const tp = parseInt(e.target.value) || 0; updateWeights(subject.id, subject.examWeight, 100 - subject.examWeight - tp, tp);}} style={{width:'100%',padding:'0.5rem',border:'1px solid #D1D5DB',borderRadius:'0.25rem'}} min="0" max="100"/>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.5rem'}}>
+                          <div>
+                            <label style={{fontSize:'0.875rem',color:'#6B7280',display:'block',marginBottom:'0.25rem'}}>الامتحان</label>
+                            <input type="number" placeholder="Exam" value={subject.exam} onChange={(e) => updateSubject(subject.id, 'exam', e.target.value)} style={{width:'100%',padding:'0.75rem',border:'2px solid #D1D5DB',borderRadius:'0.5rem'}} step="0.01" min="0" max="20"/>
+                          </div>
+                          <div>
+                            <label style={{fontSize:'0.875rem',color:'#6B7280',display:'block',marginBottom:'0.25rem'}}>TD</label>
+                            <input type="number" placeholder="TD" value={subject.td} onChange={(e) => updateSubject(subject.id, 'td', e.target.value)} style={{width:'100%',padding:'0.75rem',border:'2px solid #D1D5DB',borderRadius:'0.5rem'}} step="0.01" min="0" max="20"/>
+                          </div>
+                          <div>
+                            <label style={{fontSize:'0.875rem',color:'#6B7280',display:'block',marginBottom:'0.25rem'}}>TP</label>
+                            <input type="number" placeholder="TP" value={subject.tp} onChange={(e) => updateSubject(subject.id, 'tp', e.target.value)} style={{width:'100%',padding:'0.75rem',border:'2px solid #D1D5DB',borderRadius:'0.5rem'}} step="0.01" min="0" max="20"/>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem',marginBottom:'1.5rem'}}>
+                    <button onClick={addSubject} style={{background:'#10B981',color:'white',fontWeight:'bold',padding:'1rem',borderRadius:'0.5rem',border:'none',cursor:'pointer',fontSize:'1rem'}}>➕ إضافة مادة</button>
+                    <button onClick={calculateAverage} style={{background:'#4F46E5',color:'white',fontWeight:'bold',padding:'1rem',borderRadius:'0.5rem',border:'none',cursor:'pointer',fontSize:'1rem'}}>🧮 احسب المعدل</button>
+                  </div>
+                  {result && (
+                    <div style={{background:'linear-gradient(to right, #6366F1, #A855F7)',color:'white',padding:'1.5rem',borderRadius:'1rem'}}>
+                      <h2 style={{fontSize:'1.5rem',fontWeight:'bold',marginBottom:'1rem',textAlign:'center'}}>📊 النتيجة</h2>
+                      <div style={{background:'white',color:'#1F2937',padding:'1.5rem',borderRadius:'0.5rem',marginBottom:'1rem'}}>
+                        <p style={{fontSize:'clamp(2rem,8vw,3rem)',fontWeight:'bold',textAlign:'center',color:'#4F46E5'}}>{result.average} / 20</p>
+                        <p style={{textAlign:'center',color:'#6B7280',marginTop:'0.5rem',fontSize:'1.1rem'}}>مجموع المعاملات: {result.totalCoef}</p>
+                      </div>
+                      <div>
+                        <h3 style={{fontWeight:'bold',fontSize:'1.125rem',marginBottom:'0.75rem'}}>تفاصيل المواد:</h3>
+                        {result.details.map((detail, index) => (
+                          <div key={index} style={{background:'rgba(255,255,255,0.15)',padding:'1rem',borderRadius:'0.5rem',marginBottom:'0.5rem'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.5rem'}}>
+                              <span style={{fontWeight:'600',fontSize:'1.05rem'}}>{detail.name}</span>
+                              <span style={{fontSize:'0.9rem'}}>المعامل: {detail.coef}</span>
+                            </div>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'0.95rem'}}>
+                              <span>النقطة النهائية: {detail.finalGrade}/20</span>
+                              <span>النقاط الموزونة: {detail.weightedPoints}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p style={{textAlign:'center',color:'#6B7280',marginTop:'1.5rem',fontSize:'0.9rem',padding:'0 1rem'}}>💡 يمكنك تخصيص نسب التقييم لكل مادة</p>
+                <div style={{background:'white',borderRadius:'1rem',boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)',padding:'1.5rem',marginTop:'1.5rem'}}>
+                  <h3 style={{fontSize:'1.25rem',fontWeight:'bold',textAlign:'center',color:'#4F46E5',marginBottom:'1rem'}}>📱 تواصل معي</h3>
+                  <div style={{display:'flex',justifyContent:'center',gap:'1rem',flexWrap:'wrap'}}>
+                    <a href="https://t.me/uubma" target="_blank" style={{display:'inline-flex',alignItems:'center',gap:'0.5rem',background:'#3B82F6',color:'white',fontWeight:'bold',padding:'0.75rem 1.5rem',borderRadius:'0.5rem',textDecoration:'none'}}>✈️ Telegram</a>
+                    <a href="https://instagram.com/u.bma" target="_blank" style={{display:'inline-flex',alignItems:'center',gap:'0.5rem',background:'linear-gradient(to right, #A855F7, #EC4899, #F97316)',color:'white',fontWeight:'bold',padding:'0.75rem 1.5rem',borderRadius:'0.5rem',textDecoration:'none'}}>📸 Instagram</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        ReactDOM.render(<GradeCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
